@@ -1,0 +1,32 @@
+import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Hello! Send me a TeraBox link.")
+
+def extract_terabox_link(text):
+    import re
+    pattern = r'https?://(www\.)?terabox\.com/s/[^\s]+'
+    match = re.search(pattern, text)
+    return match.group(0) if match else None
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    link = extract_terabox_link(text)
+    if not link:
+        await update.message.reply_text("Please send a valid TeraBox link.")
+        return
+
+    direct_link = f"{link}?download=true"
+    await update.message.reply_text(f"Here is your direct download link:\n{direct_link}")
+
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    print("Bot is running...")
+    app.run_polling()
+
